@@ -1,0 +1,60 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: shellcheck install.sh
+
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install into a temporary HOME and check the result
+        run: |
+          set -euo pipefail
+          export HOME="$(mktemp -d)"
+          unset CODEX_HOME
+          ./install.sh --claude
+          ./install.sh --codex
+          for base in "$HOME/.claude/skills" "$HOME/.codex/skills"; do
+            test -f "$base/project-kickoff/SKILL.md"
+            for f in skills/project-kickoff/references/*.md; do
+              test -f "$base/project-kickoff/references/$(basename "$f")"
+            done
+          done
+          ./install.sh --uninstall
+          test ! -e "$HOME/.claude/skills/project-kickoff"
+          test ! -e "$HOME/.codex/skills/project-kickoff"
+
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check relative markdown links resolve
+        run: |
+          set -euo pipefail
+          fail=0
+          while IFS= read -r -d '' file; do
+            while IFS= read -r link; do
+              target="${link%%#*}"
+              case "$target" in ''|http://*|https://*|mailto:*) continue ;; esac
+              if [ ! -e "$(dirname "$file")/$target" ]; then
+                echo "broken link in $file: $link"
+                fail=1
+              fi
+            done < <(grep -oE '\]\([^) ]+\)' "$file" | sed -E 's/^\]\((.*)\)$/\1/' || true)
+          done < <(find . -name '*.md' -not -path './.git/*' -print0)
+          exit "$fail"
