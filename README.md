@@ -6,6 +6,8 @@ You describe an idea. It runs a short brainstorm (at most three questions and tw
 
 It needs no other tooling, and it is plain text: nothing runs on your machine except the copy step below.
 
+A GitHub Actions check (`.github/workflows/check.yml`) runs shellcheck on `install.sh`, a test install for both tools, and a markdown link check on every pull request.
+
 ## Install
 
 You need Claude Code, Codex, or both. Pick one way.
