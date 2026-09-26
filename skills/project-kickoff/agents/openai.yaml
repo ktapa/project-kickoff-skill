@@ -1,0 +1,7 @@
+interface:
+  display_name: "Project Kickoff"
+  short_description: "Turn an idea into a project: concept, docs, first slice"
+  default_prompt: "Use $project-kickoff to turn my idea into a project."
+
+policy:
+  allow_implicit_invocation: true
